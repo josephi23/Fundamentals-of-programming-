@@ -163,3 +163,86 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+def calculate_daily_totals(rows: List[List[str]]) -> Dict[date, Dict[str, List[float]]]:
+    daily: Dict[date, Dict[str, List[float]]] = {}
+
+    for parts in rows:
+        timestamp_str = parts[0]
+        dt = datetime.fromisoformat(timestamp_str)
+        d = dt.date()
+
+        cons_v1 = float(parts[1])
+        cons_v2 = float(parts[2])
+        cons_v3 = float(parts[3])
+        prod_v1 = float(parts[4])
+        prod_v2 = float(parts[5])
+        prod_v3 = float(parts[6])
+
+        if d not in daily:
+            daily[d] = {
+                "cons": [0.0, 0.0, 0.0],
+                "prod": [0.0, 0.0, 0.0],
+            }
+
+        daily[d]["cons"][0] += cons_v1
+        daily[d]["cons"][1] += cons_v2
+        daily[d]["cons"][2] += cons_v3
+        daily[d]["prod"][0] += prod_v1
+        daily[d]["prod"][1] += prod_v2
+        daily[d]["prod"][2] += prod_v3
+
+    return daily
+
+
+def format_kwh(value_wh: float) -> str:
+    value_kwh = value_wh / 1000.0
+    value_str = f"{value_kwh:.2f}"
+    return value_str.replace(".", ",")
+
+
+def weekday_name_finnish(d: date) -> str:
+    names = [
+        "monday", "tuesday", "wednesday",
+        "thursday", "friday", "saturday", "sunday"
+    ]
+    return names[d.weekday()]
+
+
+def print_report(daily_totals: Dict[date, Dict[str, List[float]]]) -> None:
+    print("Week 42 electricity consumption and production (kWh, by phase)")
+    print("Day       Date        Consumption [kWh]       Production [kWh]")
+    print("          (dd.mm.yyyy)   v1    v2    v3         v1    v2    v3")
+    print("---------------------------------------------------------------")
+
+    for d in sorted(daily_totals.keys()):
+        data = daily_totals[d]
+        cons = data["cons"]
+        prod = data["prod"]
+
+        day_name = weekday_name_finnish(d).capitalize()
+        date_str = d.strftime("%d.%m.%Y")
+
+        cons_v1 = format_kwh(cons[0])
+        cons_v2 = format_kwh(cons[1])
+        cons_v3 = format_kwh(cons[2])
+        prod_v1 = format_kwh(prod[0])
+        prod_v2 = format_kwh(prod[1])
+        prod_v3 = format_kwh(prod[2])
+
+        print(
+            f"{day_name:<9} {date_str:<11} "
+            f"{cons_v1:>5}  {cons_v2:>5}  {cons_v3:>5}     "
+            f"{prod_v1:>5}  {prod_v2:>5}  {prod_v3:>5}"
+        )
+
+
+def main() -> None:
+    filename = "week42.csv"
+    rows = read_data(filename)
+    daily_totals = calculate_daily_totals(rows)
+    print_report(daily_totals)
+
+
+if __name__ == "__main__":
+    main()
